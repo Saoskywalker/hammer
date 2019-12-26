@@ -1,0 +1,28 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"files.encoding": "gb2312",
+		"files.exclude": {
+			"**/Debug": true,
+			"**/settings": true
+		},
+		"files.autoSave": "afterDelay",
+		"files.autoSaveDelay": 30000,
+		"files.associations": {
+			"mpuiic.h": "c",
+			"userbaselib.h": "c",
+			"stm8s.h": "c",
+			"GPIO.C": "cpp",
+			"n76e003.h": "c",
+			"function_define.h": "c",
+			"delay.h": "c",
+			"tm1650.h": "c",
+			"uart_frame.h": "c",
+			"n76e003_bsp.h": "c"
+		}
+	}
+}

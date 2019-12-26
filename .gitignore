@@ -1,0 +1,8 @@
+/Listings/
+/Objects/*.crf
+/Objects/*.d
+/Objects/*.o
+/Debug/
+/.vscode/
+/LST/
+/Output/
