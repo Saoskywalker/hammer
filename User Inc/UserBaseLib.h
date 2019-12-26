@@ -31,11 +31,9 @@ void PWM_Init(uint16_t Period, uint16_t pules);
 void AD1Init(void);
 
 //App define
-#define HEAT_PIN P30
-#define LED_CON P02
-#define CHANNEL1_PIN P06
-#define CHANNEL2_PIN P07
-#define CHANNEL3_PIN P16
+#define HEAT_PIN P15
+#define LED2_CON P06
+#define LED1_CON P07
 #define BIOS_PIN P03
 #define BIOA_PIN P04
 #define POWER_PIN P20
@@ -46,21 +44,12 @@ void AD1Init(void);
 #define C_OUT_PIN P10
 #define D_OUT_PIN P11
 #define E_OUT_PIN P12
-#define F_OUT_PIN P13
-#define G_OUT_PIN P14
-#define H_OUT_PIN P15
 
 #define A_IN_PIN P01
 #define B_IN_PIN P00
 #define C_IN_PIN P10
 #define D_IN_PIN P11
 #define E_IN_PIN P12
-#define F_IN_PIN P13
-#define G_IN_PIN P14
-#define H_IN_PIN P15
-
-#define LED_CLOSE 1
-#define LED_OPEN 0
 
 #define REC_SEND_485 GPIOD_OUT->ODR3
 #define REC_485 0
@@ -91,30 +80,20 @@ extern u8 UART1BusyFlag;
 // u32 EEPROMRestartDeal();
 // void EEPROMStorage(u32 *EECount);
 
-//SMG display
-#define DIG1 (u8)0X68
-#define DIG2 (u8)0X6A
-#define DIG3 (u8)0X6C
-#define DIG4 (u8)0X6E
-
-#define SMG_One_Display(ch, i) MCU_DK_Display(ch, i);
-
 //Key get
-#define KEY_TEMP 0X01
+#define KEY_TEMP_UP 0X01
 #define KEY_START 0X02
-#define KEY_BIO 0X04
+#define KEY_BIO_UP 0X04
 #define KEY_CHARGE 0X08
 #define KEY_POWER_KEEP 0X10
+#define KEY_BIO_DOWN 0X20
+#define KEY_TEMP_DOWN 0X40
 
-#define Key_Get() MCU_DK_Key();
+void Key_Scan(void);
 
 extern u8 TempIntensity, BIOIntensity;
 void BIO1PWM(u8 i, u8 Work);
 void BIO1Power(u8 i, u8 Work);
 void HeatPWM(u8 i, u8 Work);
-void MCU_DK_Display(u8 ch,u8 dat);
-u8 MCU_DK_Key(void);
-void MCU_DK_SetLight(u8 i);
-void MCU_DK_DisAndKey_Handle(void);
 
 #endif

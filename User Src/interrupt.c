@@ -15,6 +15,7 @@ void Timer2_ISR(void) interrupt 5
         Flag1msCnt = 0;
         FlagState.ms1 = 1;
         HeatPWM(TempIntensity, FlagState.work);
+        Key_Scan();
     }
     if (++Flag2msCnt >= 20)
     {
@@ -23,7 +24,6 @@ void Timer2_ISR(void) interrupt 5
     }
     BIO1PWM(1, FlagState.work);
     BIO1Power(BIOIntensity, FlagState.work);
-    MCU_DK_DisAndKey_Handle();
 }
 
 /**
