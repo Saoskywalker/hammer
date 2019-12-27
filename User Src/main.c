@@ -246,7 +246,7 @@ void main(void)
   //   delay_ms(2000);
   // }
 
-  	OLED_Init();			//初始化OLED  
+  	OLED_Init();			//init oled  
 		OLED_Clear(); 
 
     OLED_ShowString(0,6,"BIO:",16);  
@@ -296,10 +296,12 @@ void main(void)
             KeyUp = 0;
             if(FlagState.work)
             {
-              OLED_ShowString(36,1,"    ",16);
               TempIntensity = 0;
               BIOIntensity = 0;
               FlagState.work = 0;
+              OLED_ShowString(36,1,"    ",16);
+              OLED_ShowNum(32,6,BIOIntensity,3,16);
+              OLED_ShowNum(103,6,TempIntensity,3,16);
             }
             else
             {
