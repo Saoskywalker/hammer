@@ -51,10 +51,6 @@ void AD1Init(void);
 #define D_IN_PIN P11
 #define E_IN_PIN P12
 
-#define REC_SEND_485 GPIOD_OUT->ODR3
-#define REC_485 0
-#define SEND_485 1
-
 //App value
 typedef struct
 {

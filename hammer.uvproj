@@ -45,7 +45,7 @@
             <InvalidFlash>1</InvalidFlash>
           </TargetStatus>
           <OutputDirectory>.\Output\</OutputDirectory>
-          <OutputName>brush</OutputName>
+          <OutputName>hammer</OutputName>
           <CreateExecutable>1</CreateExecutable>
           <CreateLib>0</CreateLib>
           <CreateHexFile>1</CreateHexFile>
@@ -311,7 +311,7 @@
               <MiscControls></MiscControls>
               <Define>FOSC_160000</Define>
               <Undefine></Undefine>
-              <IncludePath>.\User Inc;.\N76E003\Include;.\Library\delay</IncludePath>
+              <IncludePath>.\User Inc;.\N76E003\Include;.\Library\delay;.\Library\OLED IIC</IncludePath>
             </VariousControls>
           </C51>
           <Ax51>
@@ -402,6 +402,11 @@
               <FileName>delay.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Library\delay\delay.c</FilePath>
+            </File>
+            <File>
+              <FileName>oled.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Library\OLED IIC\oled.c</FilePath>
             </File>
           </Files>
         </Group>

@@ -100,7 +100,7 @@ void FrameSend(u8 FrameCommand, u8 FrameData1, u8 FrameData2, u8 FrameData3, u8 
 {
   u8 i = 0;
   
-  REC_SEND_485 = SEND_485;
+  // REC_SEND_485 = SEND_485;
    FrameSendBuf[0] = 0xAA;
    FrameSendBuf[1] = FrameCommand;
    FrameSendBuf[2] = FrameData1;
@@ -113,7 +113,7 @@ void FrameSend(u8 FrameCommand, u8 FrameData1, u8 FrameData2, u8 FrameData3, u8 
       usart1_send_char(FrameSendBuf[i]);
    }
    while(!UART1_GetFlagStatus(UART1_FLAG_TC));
-   REC_SEND_485 = REC_485;
+  //  REC_SEND_485 = REC_485;
 }
 
 //UART1 Send one byte 

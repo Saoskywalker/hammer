@@ -11,6 +11,7 @@ History:
 // #define DEBUG
 #include "UserBaseLib.h"
 #include "delay.h"
+#include "oled.h"
 //#include <stdio.h>
 // #include "UART_Frame.h"
 
@@ -244,6 +245,14 @@ void main(void)
   // {
   //   delay_ms(2000);
   // }
+
+  	OLED_Init();			//初始化OLED  
+		OLED_Clear(); 
+
+    OLED_ShowString(0,6,"BIO:",16);  
+		OLED_ShowString(63,6,"Temp:",16);  
+    OLED_ShowNum(32,6,BIOIntensity,3,16);
+    OLED_ShowNum(103,6,TempIntensity,3,16);
   
   while (1)
   {
@@ -261,7 +270,7 @@ void main(void)
           TaskNumber++;
           break;
         }
-        case 2: //KEY GET AND DISPLAY
+        case 2: //KEY GET
         {
           KeyValue = Key_Get();
           TaskNumber++;
@@ -277,6 +286,7 @@ void main(void)
           }   
           if(((KeyValue&KEY_POWER_KEEP)==KEY_POWER_KEEP))
           {
+            OLED_Clear();
             KEEP_PIN = 0; //close keep voltage, after releasing key, it will close
             Set_All_GPIO_Only_Input_Mode;
           }
@@ -286,12 +296,14 @@ void main(void)
             KeyUp = 0;
             if(FlagState.work)
             {
+              OLED_ShowString(36,1,"    ",16);
               TempIntensity = 0;
               BIOIntensity = 0;
               FlagState.work = 0;
             }
             else
             {
+              OLED_ShowString(36,1,"Work",16);
               FlagState.work = 1; 
             } 
           }
@@ -304,6 +316,7 @@ void main(void)
             else
             {
               BIOIntensity++;
+              OLED_ShowNum(32,6,BIOIntensity,3,16);
             }     
           }
           else if(((KeyValue&KEY_TEMP_UP)==KEY_TEMP_UP)&&KeyUp)
@@ -315,6 +328,7 @@ void main(void)
             else
             {
               TempIntensity++;
+              OLED_ShowNum(103,6,TempIntensity,3,16);
             }   
           }     
           else if(((KeyValue&KEY_BIO_DOWN)==KEY_BIO_DOWN)&&KeyUp)
@@ -326,6 +340,7 @@ void main(void)
             else
             {
               BIOIntensity--;
+              OLED_ShowNum(32,6,BIOIntensity,3,16);
             }   
           }     
           else if(((KeyValue&KEY_TEMP_DOWN)==KEY_TEMP_DOWN)&&KeyUp)
@@ -337,6 +352,7 @@ void main(void)
             else
             {
               TempIntensity--;
+              OLED_ShowNum(103,6,TempIntensity,3,16);
             }   
           }     
           TaskNumber++;    
