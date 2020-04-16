@@ -77,12 +77,12 @@ extern u8 UART1BusyFlag;
 // void EEPROMStorage(u32 *EECount);
 
 //Key get
-#define KEY_TEMP_UP 0X01
+#define KEY_SEL 0X01
 #define KEY_START 0X02
-#define KEY_BIO_UP 0X04
+#define KEY_INTEN_UP 0X04
 #define KEY_CHARGE 0X08
 #define KEY_POWER_KEEP 0X10
-#define KEY_BIO_DOWN 0X20
+#define KEY_INTEN_DOWN 0X20
 #define KEY_TEMP_DOWN 0X40
 
 void Key_Scan(void);

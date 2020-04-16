@@ -84,7 +84,7 @@ void HeatPWM(u8 i, u8 Work)
 	
 	if(Work)
 	{
-		if(++HeatTimeCnt>=8)
+		if(++HeatTimeCnt>=30)
 		{
 			HeatTimeCnt = 0;
 			HeatModRenew = i;
@@ -152,39 +152,39 @@ void Key_Scan(void)
     if (++keyCnt3 >= 20) //sensibility
     {
       keyCnt3 = 20;
-      MCU_DK_KeyData |= KEY_TEMP_UP;
+      MCU_DK_KeyData |= KEY_SEL;
     }
   }
   else
   {
     keyCnt3 = 0;
-    MCU_DK_KeyData &= ~KEY_TEMP_UP;
+    MCU_DK_KeyData &= ~KEY_SEL;
   }
   if (C_IN_PIN == 0)
   {
     if (++keyCnt4 >= 20) //sensibility
     {
       keyCnt4 = 20;
-      MCU_DK_KeyData |= KEY_BIO_DOWN;
+      MCU_DK_KeyData |= KEY_INTEN_DOWN;
     }
   }
   else
   {
     keyCnt4 = 0;
-    MCU_DK_KeyData &= ~KEY_BIO_DOWN;
+    MCU_DK_KeyData &= ~KEY_INTEN_DOWN;
   }
   if (D_IN_PIN == 0)
   {
     if (++keyCnt5 >= 20) //sensibility
     {
       keyCnt5 = 20;
-      MCU_DK_KeyData |= KEY_BIO_UP;
+      MCU_DK_KeyData |= KEY_INTEN_UP;
     }
   }
   else
   {
     keyCnt5 = 0;
-    MCU_DK_KeyData &= ~KEY_BIO_UP;
+    MCU_DK_KeyData &= ~KEY_INTEN_UP;
   }
   if (E_IN_PIN == 0)
   {
@@ -201,6 +201,9 @@ void Key_Scan(void)
   }
 }
 
+#define FUNCTION_BIO 0
+#define FUNCTION_HEAT 1
+
 void main(void)
 { 
   u16 s1 = 0, adtemp = 0; 
@@ -208,6 +211,7 @@ void main(void)
   u8 TaskNumber = 1, KeyValue = 0;
   u8 KeyUp = 0, KeyT = 0;
   u8 averageCnt = 0;
+  u8 FunctionSelect = 0, CharColor = 0, roll = 0;
   
   P17_PushPull_Mode; KEEP_PIN = 1; //power kepp
   //io init 
@@ -240,22 +244,41 @@ void main(void)
 
   delay_ms(100);
 
-  // KeyValue = Key_Get(); //display version
-  // if((KeyValue&KEY_BIO_UP)==KEY_BIO_UP&&(KeyValue&KEY_TEMP_UP)==KEY_TEMP_UP) 
-  // {
-  //   delay_ms(2000);
-  // }
-
   	OLED_Init();			//init oled  
-		OLED_Clear(); 
+		OLED_Clear(0);
 
-    OLED_ShowString(0,6,"BIO:",16);  
-		OLED_ShowString(63,6,"Temp:",16);  
-    OLED_ShowNum(32,6,BIOIntensity,3,16);
-    OLED_ShowNum(103,6,TempIntensity,3,16);
-  
-  while (1)
-  {
+    KeyValue = Key_Get(); //display version
+    if((KeyValue&KEY_INTEN_UP)==KEY_INTEN_UP&&(KeyValue&KEY_INTEN_DOWN)==KEY_INTEN_DOWN) 
+    {
+      OLED_ShowString(5, 2, "v1.0 by MTF", 16, 1);
+      delay_ms(2000);
+    }
+
+    OLED_ShowHZK(3, 2, 0, 24, FunctionSelect); //微电
+    OLED_ShowHZK(3 + 24, 2, 1, 24, FunctionSelect);
+    OLED_ShowHZK(3, 5, 2, 24, FunctionSelect + 1); //发热
+    OLED_ShowHZK(3 + 24, 5, 3, 24, FunctionSelect + 1);
+    OLED_ShowNum(86, 2, BIOIntensity, 1, 24, 1);
+    OLED_ShowNum(86, 5, TempIntensity, 1, 24, 1);
+    OLED_ShowHZK(50, 0, 3, 16, 1); //暂停
+    OLED_ShowHZK(50 + 16, 0, 4, 16, 1);
+    if (FunctionSelect == FUNCTION_BIO)
+    {
+      OLED_ShowChar(60, 2, '<', 24, 1);
+      OLED_ShowChar(60, 5, ' ', 24, 1);
+      OLED_ShowChar(109, 2, '>', 24, 1);
+      OLED_ShowChar(109, 5, ' ', 24, 1);
+    }
+    else
+    {
+      OLED_ShowChar(60, 2, ' ', 24, 1);
+      OLED_ShowChar(60, 5, '<', 24, 1);
+      OLED_ShowChar(109, 2, ' ', 24, 1);
+      OLED_ShowChar(109, 5, '>', 24, 1);
+    }
+
+    while (1)
+    {
 #ifndef DEBUG
     IWDG_Feed;  //Clear IWDG cnt
 #endif
@@ -278,15 +301,15 @@ void main(void)
         }
         case 3: //key process
         {       
-          if((KeyValue&KEY_START)!=KEY_START&&(KeyValue&KEY_BIO_UP)!=KEY_BIO_UP&&
-              (KeyValue&KEY_TEMP_UP)!=KEY_TEMP_UP&&(KeyValue&KEY_BIO_DOWN)!=KEY_BIO_DOWN&&
+          if((KeyValue&KEY_START)!=KEY_START&&(KeyValue&KEY_INTEN_UP)!=KEY_INTEN_UP&&
+              (KeyValue&KEY_SEL)!=KEY_SEL&&(KeyValue&KEY_INTEN_DOWN)!=KEY_INTEN_DOWN&&
               (KeyValue&KEY_TEMP_DOWN)!=KEY_TEMP_DOWN)
           {
             KeyUp = 1;
           }   
           if(((KeyValue&KEY_POWER_KEEP)==KEY_POWER_KEEP))
           {
-            OLED_Clear();
+            OLED_Clear(0);
             KEEP_PIN = 0; //close keep voltage, after releasing key, it will close
             Set_All_GPIO_Only_Input_Mode;
           }
@@ -294,68 +317,104 @@ void main(void)
           if(((KeyValue&KEY_START)==KEY_START)&&KeyUp)
           {
             KeyUp = 0;
-            if(FlagState.work)
+            if (FlagState.work)
             {
               TempIntensity = 0;
               BIOIntensity = 0;
               FlagState.work = 0;
-              OLED_ShowString(36,1,"    ",16);
-              OLED_ShowNum(32,6,BIOIntensity,3,16);
-              OLED_ShowNum(103,6,TempIntensity,3,16);
+              OLED_ShowHZK(50, 0, 3, 16, 1); //暂停
+              OLED_ShowHZK(50 + 16, 0, 4, 16, 1);
+              OLED_ShowNum(86, 2, BIOIntensity, 1, 24, 1);
+              OLED_ShowNum(86, 5, TempIntensity, 1, 24, 1);
+              OLED_ShowChar(50 + 32 + 8 + (roll)*8, 0, ' ', 16, 1);
+              OLED_ShowChar(50 - 8 - 8 - (roll)*8, 0, ' ', 16, 1);
+              roll = 0;
             }
             else
             {
-              OLED_ShowString(36,1,"Work",16);
+              OLED_ShowHZK(50, 0, 0, 16, 1); //工作
+              OLED_ShowHZK(50 + 16, 0, 1, 16, 1);
               FlagState.work = 1; 
             } 
           }
-          else if(((KeyValue&KEY_BIO_UP)==KEY_BIO_UP)&&KeyUp)
+          else if(((KeyValue&KEY_INTEN_UP)==KEY_INTEN_UP)&&KeyUp)
           {           
             KeyUp = 0;
-            if(BIOIntensity==8)
+            if (FunctionSelect == FUNCTION_BIO)
             {
+              if (BIOIntensity == 8)
+              {
+              }
+              else
+              {
+                BIOIntensity++;
+                OLED_ShowNum(86, 2, BIOIntensity, 1, 24, 1);
+              }
             }
             else
             {
-              BIOIntensity++;
-              OLED_ShowNum(32,6,BIOIntensity,3,16);
-            }     
+              if (TempIntensity == 8)
+              {
+              }
+              else
+              {
+                TempIntensity++;
+                OLED_ShowNum(86, 5, TempIntensity, 1, 24, 1);
+              }
+            }
           }
-          else if(((KeyValue&KEY_TEMP_UP)==KEY_TEMP_UP)&&KeyUp)
+          else if(((KeyValue&KEY_SEL)==KEY_SEL)&&KeyUp)
           {
             KeyUp = 0;
-            if(TempIntensity==8)
+            FunctionSelect = !FunctionSelect;
+            OLED_ShowHZK(3, 2, 0, 24, FunctionSelect); //微电
+            OLED_ShowHZK(3 + 24, 2, 1, 24, FunctionSelect);
+            OLED_ShowHZK(3, 5, 2, 24, FunctionSelect + 1); //发热
+            OLED_ShowHZK(3 + 24, 5, 3, 24, FunctionSelect + 1);
+            if(FunctionSelect==FUNCTION_BIO)
             {
+              OLED_ShowChar(60, 2, '<', 24, 1);
+              OLED_ShowChar(60, 5, ' ', 24, 1);
+              OLED_ShowChar(109, 2, '>', 24, 1);
+              OLED_ShowChar(109, 5, ' ', 24, 1);
             }
             else
             {
-              TempIntensity++;
-              OLED_ShowNum(103,6,TempIntensity,3,16);
-            }   
+              OLED_ShowChar(60, 2, ' ', 24, 1);
+              OLED_ShowChar(60, 5, '<', 24, 1);
+              OLED_ShowChar(109, 2, ' ', 24, 1);
+              OLED_ShowChar(109, 5, '>', 24, 1);
+            }
           }     
-          else if(((KeyValue&KEY_BIO_DOWN)==KEY_BIO_DOWN)&&KeyUp)
+          else if(((KeyValue&KEY_INTEN_DOWN)==KEY_INTEN_DOWN)&&KeyUp)
           {
             KeyUp = 0;
-            if(BIOIntensity==0)
+            if (FunctionSelect == FUNCTION_BIO)
             {
+              if (BIOIntensity == 0)
+              {
+              }
+              else
+              {
+                BIOIntensity--;
+                OLED_ShowNum(86, 2, BIOIntensity, 1, 24, 1);
+              }
             }
             else
             {
-              BIOIntensity--;
-              OLED_ShowNum(32,6,BIOIntensity,3,16);
-            }   
+              if (TempIntensity == 0)
+              {
+              }
+              else
+              {
+                TempIntensity--;
+                OLED_ShowNum(86, 5, TempIntensity, 1, 24, 1);
+              }
+            }
           }     
           else if(((KeyValue&KEY_TEMP_DOWN)==KEY_TEMP_DOWN)&&KeyUp)
           {
             KeyUp = 0;
-            if(TempIntensity==0)
-            {
-            }
-            else
-            {
-              TempIntensity--;
-              OLED_ShowNum(103,6,TempIntensity,3,16);
-            }   
           }     
           TaskNumber++;    
           break;
@@ -365,6 +424,22 @@ void main(void)
           if (++s1 >= 100) //1s
           {
             s1 = 0;
+            if(FlagState.work)
+            {
+              if (++roll > 3)
+              {
+                OLED_ShowChar(50 + 32 + 8 + (roll - 1) * 8, 0, ' ', 16, 1);
+                OLED_ShowChar(50 - 8 - 8 - (roll - 1) * 8, 0, ' ', 16, 1);
+                roll = 0;
+              }
+              else
+              {
+                OLED_ShowChar(50 + 32 + roll * 8, 0, ' ', 16, 1);
+                OLED_ShowChar(50 + 32 + 8 + roll * 8, 0, ' ', 16, 0);
+                OLED_ShowChar(50 - 8 - roll * 8, 0, ' ', 16, 1);
+                OLED_ShowChar(50 - 8 - 8 - roll * 8, 0, ' ', 16, 0);
+              }
+            }
           }
 
           if(FlagState.work)

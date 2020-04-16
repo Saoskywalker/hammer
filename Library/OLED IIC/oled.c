@@ -1,13 +1,4 @@
 //////////////////////////////////////////////////////////////////////////////////
-//本程序只供学习使用，未经作者许可，不得用于其它任何用途
-//中景园电子
-//店铺地址：http://shop73023976.taobao.com/?spm=2013.1.0.0.M4PqC2
-//
-//  文 件 名   : main.c
-//  版 本 号   : v2.0
-//  作    者   : HuangKai
-//  生成日期   : 2014-0101
-//  最近修改   :
 //  功能描述   : OLED 4接口演示例程(51系列)
 //              说明:
 //              ----------------------------------------------------------------
@@ -19,18 +10,6 @@
 //              DC   接P13
 //              CS   接P14
 //              ----------------------------------------------------------------
-// 修改历史   :
-// 日    期   :
-// 作    者   : HuangKai
-// 修改内容   : 创建文件
-//版权所有，盗版必究。
-//Copyright(C) 中景园电子2014/3/16
-//All rights reserved
-//******************************************************************************/。
-#include "oled.h"
-#include "oledfont.h"
-#include "delay.h"
-
 //OLED的显存
 //存放格式如下.
 //[0]0 1 2 3 ... 127
@@ -41,11 +20,53 @@
 //[5]0 1 2 3 ... 127
 //[6]0 1 2 3 ... 127
 //[7]0 1 2 3 ... 127
+//******************************************************************************/。
+#include "oled.h"
+#include "oledfont.h"
+#include "delay.h"
+
+#include "N76E003_BSP.h"
+
+#define OLED_CMD 0  //写命令
+#define OLED_DATA 1 //写数据
+#define OLED_MODE 0
+
+//-----------------OLED端口定义----------------
+#define OLED_SCL P13
+#define OLED_SDIN P14
+
+#define OLED_CS_Clr() OLED_CS = 0
+#define OLED_CS_Set() OLED_CS = 1
+
+#define OLED_RST_Clr() OLED_RST = 0
+#define OLED_RST_Set() OLED_RST = 1
+
+#define OLED_DC_Clr() OLED_DC = 0
+#define OLED_DC_Set() OLED_DC = 1
+
+#define OLED_SCLK_Clr() OLED_SCL = 0
+#define OLED_SCLK_Set() OLED_SCL = 1
+
+#define OLED_SDIN_Clr() OLED_SDIN = 0
+#define OLED_SDIN_Set() OLED_SDIN = 1
+
+//OLED模式设置
+//0:4线串行模式
+//1:并行8080模式
+
+#define SIZE 16
+#define XLevelL 0x02
+#define XLevelH 0x10
+#define Max_Column 128
+#define Max_Row 64
+#define Brightness 0xFF
+#define X_WIDTH 128
+#define Y_WIDTH 64
 
 /**********************************************
 //IIC Start
 **********************************************/
-void IIC_Start()
+static void IIC_Start()
 {
 	OLED_SCLK_Set();
 	OLED_SDIN_Set();
@@ -56,7 +77,7 @@ void IIC_Start()
 /**********************************************
 //IIC Stop
 **********************************************/
-void IIC_Stop()
+static void IIC_Stop()
 {
 	OLED_SCLK_Set();
 	//	OLED_SCLK_Clr();
@@ -64,7 +85,7 @@ void IIC_Stop()
 	OLED_SDIN_Set();
 }
 
-void IIC_Wait_Ack()
+static void IIC_Wait_Ack()
 {
 
 	//GPIOB->CRH &= 0XFFF0FFFF;	//设置PB12为上拉输入模式
@@ -90,7 +111,7 @@ void IIC_Wait_Ack()
 /**********************************************
 // IIC Write byte
 **********************************************/
-void Write_IIC_Byte(unsigned char IIC_Byte)
+static void Write_IIC_Byte(unsigned char IIC_Byte)
 {
 	unsigned char i;
 	unsigned char m, da;
@@ -116,7 +137,7 @@ void Write_IIC_Byte(unsigned char IIC_Byte)
 /**********************************************
 // IIC Write Command
 **********************************************/
-void Write_IIC_Command(unsigned char IIC_Command)
+static void Write_IIC_Command(unsigned char IIC_Command)
 {
 	IIC_Start();
 	Write_IIC_Byte(0x78); //Slave address,SA0=0
@@ -131,7 +152,7 @@ void Write_IIC_Command(unsigned char IIC_Command)
 /**********************************************
 // IIC Write Data
 **********************************************/
-void Write_IIC_Data(unsigned char IIC_Data)
+static void Write_IIC_Data(unsigned char IIC_Data)
 {
 	IIC_Start();
 	Write_IIC_Byte(0x78); //D/C#=0; R/W#=0
@@ -142,6 +163,7 @@ void Write_IIC_Data(unsigned char IIC_Data)
 	IIC_Wait_Ack();
 	IIC_Stop();
 }
+
 void OLED_WR_Byte(unsigned dat, unsigned cmd)
 {
 	if (cmd)
@@ -157,7 +179,7 @@ void OLED_WR_Byte(unsigned dat, unsigned cmd)
 /********************************************
 // fill_Picture
 ********************************************/
-void fill_picture(unsigned char fill_Data)
+void OLED_fill_picture(unsigned char fill_Data)
 {
 	unsigned char m, n;
 	for (m = 0; m < 8; m++)
@@ -172,7 +194,7 @@ void fill_picture(unsigned char fill_Data)
 	}
 }
 
-//坐标设置
+//坐标设置 x: x坐标(自增), y: 注意:Y为页号, 12864 以8行为一页, 垂直方向共8页
 void OLED_Set_Pos(unsigned char x, unsigned char y)
 {
 	OLED_WR_Byte(0xb0 + y, OLED_CMD);
@@ -196,23 +218,24 @@ void OLED_Display_Off(void)
 	OLED_WR_Byte(0XAE, OLED_CMD); //DISPLAY OFF
 }
 
-//清屏函数,清完屏,整个屏幕是黑色的!和没点亮一样!!!
-void OLED_Clear(void)
+//清屏函数,清完屏
+//j: 0正常清屏, 0XFF: 反色清屏
+void OLED_Clear(unsigned char j)
 {
-	u8 i, n;
+	unsigned char i, n;
 	for (i = 0; i < 8; i++)
 	{
 		OLED_WR_Byte(0xb0 + i, OLED_CMD); //设置页地址（0~7）
 		OLED_WR_Byte(0x00, OLED_CMD);	 //设置显示位置—列低地址
 		OLED_WR_Byte(0x10, OLED_CMD);	 //设置显示位置—列高地址
 		for (n = 0; n < 128; n++)
-			OLED_WR_Byte(0, OLED_DATA);
+			OLED_WR_Byte(j, OLED_DATA);
 	} //更新显示
 }
 
 void OLED_On(void)
 {
-	u8 i, n;
+	unsigned char i, n;
 	for (i = 0; i < 8; i++)
 	{
 		OLED_WR_Byte(0xb0 + i, OLED_CMD); //设置页地址（0~7）
@@ -225,39 +248,131 @@ void OLED_On(void)
 
 //在指定位置显示一个字符,包括部分字符
 //x:0~127
-//y:0~63
-//mode:0,反白显示;1,正常显示
-//size:选择字体 16/12
-void OLED_ShowChar(u8 x, u8 y, u8 chr, u8 Char_Size)
+//y:0~7
+//mode: 0bit: 0,反色显示;1,正常显示
+//size:选择字体
+void OLED_ShowChar(unsigned char x, unsigned char y, unsigned char chr, 
+					unsigned char Char_Size, unsigned char mode)
 {
 	unsigned char c = 0, i = 0;
 	c = chr - ' '; //得到偏移后的值
-	if (x > Max_Column - 1)
-	{
-		x = 0;
-		y = y + 2;
-	}
+	if (x > Max_Column - Char_Size / 2 + 1) //x超界, 不显示
+		return;
+	if (y > Max_Row / 8 - 1) //y超界, 不显
+		return;
 	if (Char_Size == 16)
 	{
 		OLED_Set_Pos(x, y);
 		for (i = 0; i < 8; i++)
-			OLED_WR_Byte(F8X16[c * 16 + i], OLED_DATA);
+		{
+			if (mode & 0X01)
+				OLED_WR_Byte(ASCII16[c][i], OLED_DATA);
+			else
+				OLED_WR_Byte(~ASCII16[c][i], OLED_DATA);
+		}
 		OLED_Set_Pos(x, y + 1);
 		for (i = 0; i < 8; i++)
-			OLED_WR_Byte(F8X16[c * 16 + i + 8], OLED_DATA);
+		{
+			if (mode & 0X01)
+				OLED_WR_Byte(ASCII16[c][i + 8], OLED_DATA);
+			else
+				OLED_WR_Byte(~ASCII16[c][i + 8], OLED_DATA);
+		}
 	}
-	else
+	else if (Char_Size == 24)
 	{
 		OLED_Set_Pos(x, y);
-		for (i = 0; i < 6; i++)
-			OLED_WR_Byte(F6x8[c][i], OLED_DATA);
+		for (i = 0; i < 12; i++)
+		{
+			if(mode&0X01)
+				OLED_WR_Byte(ASCII24[c][i], OLED_DATA);
+			else
+				OLED_WR_Byte(~ASCII24[c][i], OLED_DATA);
+		}
+		OLED_Set_Pos(x, y + 1);
+		for (i = 0; i < 12; i++)
+		{
+			if(mode&0X01)
+				OLED_WR_Byte(ASCII24[c][i + 12], OLED_DATA);
+			else
+				OLED_WR_Byte(~ASCII24[c][i + 12], OLED_DATA);
+		}
+		OLED_Set_Pos(x, y + 2);
+		for (i = 0; i < 12; i++)
+		{
+			if(mode&0X01)
+				OLED_WR_Byte(ASCII24[c][i + 24], OLED_DATA);
+			else
+				OLED_WR_Byte(~ASCII24[c][i + 24], OLED_DATA);
+		}
+	}
+}
+
+//在指定位置显示一个汉字字符
+//x:0~127
+//y:0~7
+//mode: 0bit: 0,反色显示;1,正常显示
+//size:选择字体 
+void OLED_ShowHZK(unsigned char x, unsigned char y, unsigned char c, 
+					unsigned char Char_Size, unsigned char mode)
+{
+	unsigned char i = 0;
+	if (x > Max_Column - Char_Size + 1) //x超界, 不显示
+		return;
+	if (y > Max_Row / 8 - 1) //y超界, 不显
+		return;
+	if (Char_Size == 16)
+	{
+		OLED_Set_Pos(x, y);
+		for (i = 0; i < 16; i++)
+		{
+			if (mode & 0X01)
+				OLED_WR_Byte(HZK16[c][i], OLED_DATA);
+			else
+				OLED_WR_Byte(~HZK16[c][i], OLED_DATA);
+		}
+		OLED_Set_Pos(x, y + 1);
+		for (i = 0; i < 16; i++)
+		{
+			if (mode & 0X01)
+				OLED_WR_Byte(HZK16[c][i + 16], OLED_DATA);
+			else
+				OLED_WR_Byte(~HZK16[c][i + 16], OLED_DATA);
+		}
+	}
+	else if (Char_Size == 24)
+	{
+		OLED_Set_Pos(x, y);
+		for (i = 0; i < 24; i++)
+		{
+			if(mode&0X01)
+				OLED_WR_Byte(HZK24[c][i], OLED_DATA);
+			else
+				OLED_WR_Byte(~HZK24[c][i], OLED_DATA);
+		}
+		OLED_Set_Pos(x, y + 1);
+		for (i = 0; i < 24; i++)
+		{
+			if(mode&0X01)
+				OLED_WR_Byte(HZK24[c][i + 24], OLED_DATA);
+			else
+				OLED_WR_Byte(~HZK24[c][i + 24], OLED_DATA);
+		}
+		OLED_Set_Pos(x, y + 2);
+		for (i = 0; i < 24; i++)
+		{
+			if(mode&0X01)
+				OLED_WR_Byte(HZK24[c][i + 48], OLED_DATA);
+			else
+				OLED_WR_Byte(~HZK24[c][i + 48], OLED_DATA);
+		}
 	}
 }
 
 //m^n函数
-u32 oled_pow(u8 m, u8 n)
+static unsigned long int oled_pow(unsigned char m, unsigned char n)
 {
-	u32 result = 1;
+	unsigned long int result = 1;
 	while (n--)
 		result *= m;
 	return result;
@@ -269,10 +384,11 @@ u32 oled_pow(u8 m, u8 n)
 //size:字体大小
 //mode:模式	0,填充模式;1,叠加模式
 //num:数值(0~4294967295);
-void OLED_ShowNum(u8 x, u8 y, u32 num, u8 len, u8 size2)
+void OLED_ShowNum(unsigned char x, unsigned char y, unsigned long int num, 
+					unsigned char len, unsigned char size2, unsigned char mode)
 {
-	u8 t, temp;
-	u8 enshow = 0;
+	unsigned char t, temp;
+	unsigned char enshow = 0;
 	for (t = 0; t < len; t++)
 	{
 		temp = (num / oled_pow(10, len - t - 1)) % 10;
@@ -280,48 +396,29 @@ void OLED_ShowNum(u8 x, u8 y, u32 num, u8 len, u8 size2)
 		{
 			if (temp == 0)
 			{
-				OLED_ShowChar(x + (size2 / 2) * t, y, ' ', size2);
+				OLED_ShowChar(x + (size2 / 2) * t, y, ' ', size2, mode);
 				continue;
 			}
 			else
 				enshow = 1;
 		}
-		OLED_ShowChar(x + (size2 / 2) * t, y, temp + '0', size2);
+		OLED_ShowChar(x + (size2 / 2) * t, y, temp + '0', size2, mode);
 	}
 }
 
 //显示一个字符号串
-void OLED_ShowString(u8 x, u8 y, u8 *chr, u8 Char_Size)
+void OLED_ShowString(unsigned char x, unsigned char y, unsigned char *chr, 
+						unsigned char Char_Size, unsigned char mode)
 {
 	unsigned char j = 0;
 	while (chr[j] != '\0')
 	{
-		OLED_ShowChar(x, y, chr[j], Char_Size);
-		x += 8;
-		if (x > 120)
+		if(chr[j]<='~'&&chr[j]>=' ')
 		{
-			x = 0;
-			y += 2;
+			OLED_ShowChar(x, y, chr[j], Char_Size, mode);
+			x += Char_Size/2;
 		}
 		j++;
-	}
-}
-
-//显示汉字
-void OLED_ShowCHinese(u8 x, u8 y, u8 no)
-{
-	u8 t, adder = 0;
-	OLED_Set_Pos(x, y);
-	for (t = 0; t < 16; t++)
-	{
-		OLED_WR_Byte(Hzk[2 * no][t], OLED_DATA);
-		adder += 1;
-	}
-	OLED_Set_Pos(x, y + 1);
-	for (t = 0; t < 16; t++)
-	{
-		OLED_WR_Byte(Hzk[2 * no + 1][t], OLED_DATA);
-		adder += 1;
 	}
 }
 
@@ -349,8 +446,8 @@ void OLED_DrawBMP(unsigned char x0, unsigned char y0, unsigned char x1, unsigned
 void OLED_Init(void)
 {
 	P13_Quasi_Mode; OLED_SCL = 1; //SCL
-  	P14_Quasi_Mode; OLED_SDIN = 1; //SDA
-	// delay_ms(100);
+  P14_Quasi_Mode; OLED_SDIN = 1; //SDA
+	delay_ms(10);
 	OLED_WR_Byte(0xAE, OLED_CMD); //--display off
 	OLED_WR_Byte(0x00, OLED_CMD); //---set low column address
 	OLED_WR_Byte(0x10, OLED_CMD); //---set high column address
