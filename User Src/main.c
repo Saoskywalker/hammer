@@ -218,9 +218,9 @@ void main(void)
   //note: after power up, N76E003 IO is only input(float) mode, P0,P1,P3 is 1 P2 only input mode
   clr_P2S_0; //POWER KEY, HIZ mode
   // Quasi-Bidirectional MODE
-  P15_Quasi_Mode; HEAT_PIN = 0; //HEAT
-  P06_Quasi_Mode; LED2_CON = 0; //LED
-  P07_Quasi_Mode; LED1_CON = 0; 
+  P15_PushPull_Mode; HEAT_PIN = 0; //HEAT
+  P06_PushPull_Mode; LED2_CON = 0; //LED
+  P07_PushPull_Mode; LED1_CON = 0; 
   P03_PushPull_Mode; BIOS_PIN = 1; //BIO S
   P04_PushPull_Mode; BIOA_PIN = 0;//BIO A
 
