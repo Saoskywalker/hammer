@@ -21,8 +21,8 @@ History:
 
 //BIO1 PWM
 u8 BIOIntensity = 0;
-const u16 BIO1IntensityTable[] = {0, 36, 38, 40, 42, 44,
-																	46, 48, 50};
+const u16 BIO1IntensityTable[] = {0, 25, 30, 33, 36, 39,
+																	42, 45, 50};
 const u16 BIO1ModPeriod[] = {11, 330, 400};
 const u16 BIO1ModCompare[] = {3, 2, 240};	
 void BIO1PWM(u8 i, u8 Work)
@@ -84,7 +84,7 @@ void HeatPWM(u8 i, u8 Work)
 	
 	if(Work)
 	{
-		if(++HeatTimeCnt>=30)
+		if(++HeatTimeCnt>=60)
 		{
 			HeatTimeCnt = 0;
 			HeatModRenew = i;
