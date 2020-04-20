@@ -445,8 +445,8 @@ void OLED_DrawBMP(unsigned char x0, unsigned char y0, unsigned char x1, unsigned
 //≥ı ºªØSSD1306
 void OLED_Init(void)
 {
-	P13_Quasi_Mode; OLED_SCL = 1; //SCL
-  P14_Quasi_Mode; OLED_SDIN = 1; //SDA
+	P13_OpenDrain_Mode; OLED_SCL = 1; //SCL
+  	P14_OpenDrain_Mode; OLED_SDIN = 1; //SDA
 	delay_ms(10);
 	OLED_WR_Byte(0xAE, OLED_CMD); //--display off
 	OLED_WR_Byte(0x00, OLED_CMD); //---set low column address
