@@ -87,7 +87,7 @@ extern u8 UART1BusyFlag;
 
 void Key_Scan(void);
 
-extern u8 TempIntensity, BIOIntensity;
+extern u8 TempIntensity, BIOIntensity, BIOMode;
 void BIO1PWM(u8 i, u8 Work);
 void BIO1Power(u8 i, u8 Work);
 void HeatPWM(u8 i, u8 Work);

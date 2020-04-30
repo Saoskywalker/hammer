@@ -20,31 +20,51 @@ History:
 /* Private function prototypes -----------------------------------------------*/
 
 //BIO1 PWM
-u8 BIOIntensity = 0;
-const u16 BIO1IntensityTable[] = {0, 25, 30, 33, 36, 39,
-																	42, 45, 50};
-const u16 BIO1ModPeriod[] = {11, 330, 400};
-const u16 BIO1ModCompare[] = {3, 2, 240};	
+u8 BIOIntensity = 0, BIOMode = 1;
+const u16 BIO1IntensityTable[] = {0, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
+																	33, 34, 35, 36, 37, 38, 40, 42, 45, 50};
+const u16 BIO1ModPeriod[] = {1000, 500, 400, 300, 180, 330, 190}; 
+const u16 BIO1ModCompare[] = {0, 10000, 4950, 1320, 2640, 2640, 4950};
 void BIO1PWM(u8 i, u8 Work)
 {
-	static u16 BIO1TimeCnt = 0;
+	static u16 BIO1TimeCnt = 0, BIO1TimeCnt2 = 0;
 	static u8 BIO1ModRenew = 0;
-	
-	if(Work)
+
+	if (Work)
 	{
-		if(++BIO1TimeCnt>=BIO1ModPeriod[BIO1ModRenew])
+		// if (++BIO1TimeCnt2 >= BIO1ModPeriod[BIO1ModRenew])
+		// {
+		// 	BIO1TimeCnt2 = 0;
+		// 	BIO1ModRenew = i;
+		// }
+		// if (BIO1TimeCnt2 < BIO1ModCompare[BIO1ModRenew])
+		// {
+		// 	if (++BIO1TimeCnt >= 330) //BIO1ModPeriod[BIO1ModRenew])
+		// 		BIO1TimeCnt = 0;
+		// 	if (BIO1TimeCnt < 2) //BIO1ModCompare[BIO1ModRenew]))
+		// 		BIOS_PIN = 0;	//open
+		// 	else
+		// 		BIOS_PIN = 1; //close
+		// }
+		// else
+		// {
+		// 	BIOS_PIN = 1; //close
+		// 	BIO1TimeCnt = 0;
+		// }
+		if (++BIO1TimeCnt >= BIO1ModPeriod[BIO1ModRenew]) //BIO1ModPeriod[BIO1ModRenew])
 		{
 			BIO1TimeCnt = 0;
 			BIO1ModRenew = i;
 		}
-		if((BIO1TimeCnt<BIO1ModCompare[BIO1ModRenew]))
-			BIOS_PIN = 0; //open
+		if (BIO1TimeCnt < 2)
+			BIOS_PIN = 0;	 //open
 		else
 			BIOS_PIN = 1; //close
 	}
 	else
 	{
 		BIO1TimeCnt = 0;
+		BIO1TimeCnt2 = 0;
 		BIOS_PIN = 1; //close
 	}
 }
@@ -74,7 +94,7 @@ void BIO1Power(u8 i, u8 Work)
 }
 
 //Heat
-u8 TempIntensity = 0;
+u8 TempIntensity = 1;
 const u16 HeatIntensityTable[] = {0, 1, 2, 3, 4,
 																	5, 6, 7, 8};
 void HeatPWM(u8 i, u8 Work)
@@ -98,6 +118,35 @@ void HeatPWM(u8 i, u8 Work)
 	{
 		HeatTimeCnt = 0;
 		HEAT_PIN = 0;	//ON
+	}
+}
+
+//Temperature Process
+const u16 TemperatureTable[] = {4095, 1400, 1396, 1296, 1196, 1096,
+								                1040, 996, 796, 596, 498};
+u16 TempADvalue = 0;
+void TemperatureProcess(void)
+{
+	static u16 i = 0;
+	
+	//NTC ERROR
+	if(TempADvalue>=4000||TempADvalue<=100)
+	{
+		if(++i>=10)
+		{
+			i = 10;
+			HEAT_PIN = 0;
+		}
+	}
+	else
+	{
+		if (i!=0)
+			i--;
+
+		if(TempADvalue>=TemperatureTable[TempIntensity]+16)
+			HEAT_PIN = 1;
+		if(TempADvalue<=TemperatureTable[TempIntensity])
+			HEAT_PIN = 0;
 	}
 }
 
@@ -201,8 +250,9 @@ void Key_Scan(void)
   }
 }
 
-#define FUNCTION_BIO 0
-#define FUNCTION_HEAT 1
+#define FUNCTION_BIO_INTEN 0
+#define FUNCTION_BIO_MODE 1
+#define FUNCTION_HEAT_TEMP 2
 
 extern const unsigned char code PIC1[][32];
 
@@ -213,7 +263,7 @@ void main(void)
   u8 TaskNumber = 1, KeyValue = 0;
   u8 KeyUp = 0, KeyT = 0;
   u8 averageCnt = 0;
-  u8 FunctionSelect = 0, CharColor = 0, roll = 0;
+  u8 OptionSelect = FUNCTION_BIO_INTEN, CharColor = 0, roll = 0;
   
   P17_PushPull_Mode; KEEP_PIN = 1; //power kepp
   //io init 
@@ -268,30 +318,18 @@ void main(void)
       OLED_fill_picture(&PIC1[0][0]);
       delay_ms(1000);
       OLED_Clear(0);
-      OLED_ShowHZK(3, 2, 0, 24, FunctionSelect); //微电
-      OLED_ShowHZK(3 + 24, 2, 1, 24, FunctionSelect);
-      OLED_ShowHZK(3, 5, 2, 24, FunctionSelect + 1); //发热
-      OLED_ShowHZK(3 + 24, 5, 3, 24, FunctionSelect + 1);
-      OLED_ShowNum(86, 2, BIOIntensity, 1, 24, 1);
-      OLED_ShowNum(86, 5, TempIntensity, 1, 24, 1);
+      OLED_ShowHZK(3, 2, 0, 24, 1); //微电
+      OLED_ShowHZK(3 + 24, 2, 1, 24, 1);
+      OLED_ShowHZK(3, 5, 2, 24, 1); //发热
+      OLED_ShowHZK(3 + 24, 5, 3, 24, 1);
+      OLED_ShowNum(60, 2, BIOIntensity, 2, 24, 0);
+      OLED_ShowChar(100, 2, BIOMode+'@', 24, 1);
+      OLED_ShowNum(60, 5, TempIntensity*3+30, 2, 24, 1);
+      OLED_ShowHZK(85, 5, 4, 24, 1); //C
       OLED_ShowHZK(50, 0, 3, 16, 1); //暂停
       OLED_ShowHZK(50 + 16, 0, 4, 16, 1);
-      if (FunctionSelect == FUNCTION_BIO)
-      {
-        OLED_ShowChar(60, 2, '<', 24, 1);
-        OLED_ShowChar(60, 5, ' ', 24, 1);
-        OLED_ShowChar(109, 2, '>', 24, 1);
-        OLED_ShowChar(109, 5, ' ', 24, 1);
-      }
-      else
-      {
-        OLED_ShowChar(60, 2, ' ', 24, 1);
-        OLED_ShowChar(60, 5, '<', 24, 1);
-        OLED_ShowChar(109, 2, ' ', 24, 1);
-        OLED_ShowChar(109, 5, '>', 24, 1);
-      }
     }
-    
+
     if (FlagState.ms2)
     {
       FlagState.ms2 = 0;
@@ -328,13 +366,9 @@ void main(void)
             KeyUp = 0;
             if (FlagState.work)
             {
-              TempIntensity = 0;
-              BIOIntensity = 0;
               FlagState.work = 0;
               OLED_ShowHZK(50, 0, 3, 16, 1); //暂停
               OLED_ShowHZK(50 + 16, 0, 4, 16, 1);
-              OLED_ShowNum(86, 2, BIOIntensity, 1, 24, 1);
-              OLED_ShowNum(86, 5, TempIntensity, 1, 24, 1);
               OLED_ShowChar(50 + 32 + 8 + (roll)*8, 0, ' ', 16, 1);
               OLED_ShowChar(50 - 8 - 8 - (roll)*8, 0, ' ', 16, 1);
               roll = 0;
@@ -349,56 +383,68 @@ void main(void)
           else if(((KeyValue&KEY_INTEN_UP)==KEY_INTEN_UP)&&KeyUp)
           {           
             KeyUp = 0;
-            if (FunctionSelect == FUNCTION_BIO)
+            if (OptionSelect == FUNCTION_BIO_INTEN)
             {
-              if (BIOIntensity == 8)
+              if (BIOIntensity == 20)
               {
               }
               else
               {
                 BIOIntensity++;
-                OLED_ShowNum(86, 2, BIOIntensity, 1, 24, 1);
+                OLED_ShowNum(60, 2, BIOIntensity, 2, 24, 0);
+              }
+            }
+            else if (OptionSelect == FUNCTION_BIO_MODE)
+            {
+              if (BIOMode == 4)
+              {
+              }
+              else
+              {
+                BIOMode++;
+                OLED_ShowChar(100, 2, BIOMode+'@', 24, 0);
               }
             }
             else
             {
-              if (TempIntensity == 8)
+              if (TempIntensity == 10)
               {
               }
               else
               {
                 TempIntensity++;
-                OLED_ShowNum(86, 5, TempIntensity, 1, 24, 1);
+                OLED_ShowNum(60, 5, TempIntensity*3+30, 2, 24, 0);
               }
             }
           }
           else if(((KeyValue&KEY_SEL)==KEY_SEL)&&KeyUp)
           {
             KeyUp = 0;
-            FunctionSelect = !FunctionSelect;
-            OLED_ShowHZK(3, 2, 0, 24, FunctionSelect); //微电
-            OLED_ShowHZK(3 + 24, 2, 1, 24, FunctionSelect);
-            OLED_ShowHZK(3, 5, 2, 24, FunctionSelect + 1); //发热
-            OLED_ShowHZK(3 + 24, 5, 3, 24, FunctionSelect + 1);
-            if(FunctionSelect==FUNCTION_BIO)
+            if(++OptionSelect>=3)
+              OptionSelect = 0;
+            if (OptionSelect == FUNCTION_BIO_INTEN)
             {
-              OLED_ShowChar(60, 2, '<', 24, 1);
-              OLED_ShowChar(60, 5, ' ', 24, 1);
-              OLED_ShowChar(109, 2, '>', 24, 1);
-              OLED_ShowChar(109, 5, ' ', 24, 1);
+                OLED_ShowNum(60, 2, BIOIntensity, 2, 24, 0);
+                OLED_ShowChar(100, 2, BIOMode+'@', 24, 1);
+                OLED_ShowNum(60, 5, TempIntensity*3+30, 2, 24, 1);
+            }
+            else if (OptionSelect == FUNCTION_BIO_MODE)
+            {
+                OLED_ShowNum(60, 2, BIOIntensity, 2, 24, 1);
+                OLED_ShowChar(100, 2, BIOMode+'@', 24, 0);
+                OLED_ShowNum(60, 5, TempIntensity*3+30, 2, 24, 1);
             }
             else
             {
-              OLED_ShowChar(60, 2, ' ', 24, 1);
-              OLED_ShowChar(60, 5, '<', 24, 1);
-              OLED_ShowChar(109, 2, ' ', 24, 1);
-              OLED_ShowChar(109, 5, '>', 24, 1);
+                OLED_ShowNum(60, 2, BIOIntensity, 2, 24, 1);
+                OLED_ShowChar(100, 2, BIOMode+'@', 24, 1);
+                OLED_ShowNum(60, 5, TempIntensity*3+30, 2, 24, 0);
             }
           }     
           else if(((KeyValue&KEY_INTEN_DOWN)==KEY_INTEN_DOWN)&&KeyUp)
           {
             KeyUp = 0;
-            if (FunctionSelect == FUNCTION_BIO)
+            if (OptionSelect == FUNCTION_BIO_INTEN)
             {
               if (BIOIntensity == 0)
               {
@@ -406,18 +452,29 @@ void main(void)
               else
               {
                 BIOIntensity--;
-                OLED_ShowNum(86, 2, BIOIntensity, 1, 24, 1);
+                OLED_ShowNum(60, 2, BIOIntensity, 2, 24, 0);
+              }
+            }
+            else if (OptionSelect == FUNCTION_BIO_MODE)
+            {
+              if (BIOMode == 1)
+              {
+              }
+              else
+              {
+                BIOMode--;
+                OLED_ShowChar(100, 2, BIOMode+'@', 24, 0);
               }
             }
             else
             {
-              if (TempIntensity == 0)
+              if (TempIntensity == 1)
               {
               }
               else
               {
                 TempIntensity--;
-                OLED_ShowNum(86, 5, TempIntensity, 1, 24, 1);
+                OLED_ShowNum(60, 5, TempIntensity*3+30, 2, 24, 0);
               }
             }
           }     
@@ -433,7 +490,8 @@ void main(void)
           if (++s1 >= 100) //1s
           {
             s1 = 0;
-            if(FlagState.work)
+
+            if (FlagState.work)
             {
               if (++roll > 3)
               {
@@ -448,6 +506,21 @@ void main(void)
                 OLED_ShowChar(50 - 8 - roll * 8, 0, ' ', 16, 1);
                 OLED_ShowChar(50 - 8 - 8 - roll * 8, 0, ' ', 16, 0);
               }
+
+              TempADvalue = 0;
+              for (averageCnt = 0; averageCnt < 8; averageCnt++)
+              {
+                set_ADCS; //start adc convert
+                while (ADCF == 0)
+                  ;       //check EOC flag
+                clr_ADCF; //clear EOC flag
+                adtemp = 0;
+                adtemp = ADCRH;
+                adtemp = (adtemp << 4) + ADCRL;
+                TempADvalue += adtemp;
+              }
+              TempADvalue = TempADvalue >> 3; // x/8
+              TemperatureProcess();
             }
           }
 
@@ -460,6 +533,7 @@ void main(void)
           {
             LED1_CON = 0;
             LED2_CON = 0;
+            HEAT_PIN = 0;
           }     
           TaskNumber++;
           break;

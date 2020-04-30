@@ -14,7 +14,7 @@ void Timer2_ISR(void) interrupt 5
     {
         Flag1msCnt = 0;
         FlagState.ms1 = 1;
-        HeatPWM(TempIntensity, FlagState.work);
+        // HeatPWM(TempIntensity, FlagState.work);
         Key_Scan();
     }
     if (++Flag2msCnt >= 20)
@@ -22,7 +22,7 @@ void Timer2_ISR(void) interrupt 5
         Flag2msCnt = 0;
         FlagState.ms2 = 1;
     }
-    BIO1PWM(1, FlagState.work);
+    BIO1PWM(BIOMode, FlagState.work);
     BIO1Power(BIOIntensity, FlagState.work);
 }
 
