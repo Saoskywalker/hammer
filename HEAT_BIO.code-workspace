@@ -23,7 +23,9 @@
 			"tm1650.h": "c",
 			"uart_frame.h": "c",
 			"n76e003_bsp.h": "c",
-			"oled.h": "c"
+			"oled.h": "c",
+			"0.96寸 2864初始化(SPI SSD1315).C": "cpp",
+			"oledfont.h": "c"
 		}
 	}
 }

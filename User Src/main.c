@@ -204,9 +204,11 @@ void Key_Scan(void)
 #define FUNCTION_BIO 0
 #define FUNCTION_HEAT 1
 
+extern const unsigned char code PIC1[][32];
+
 void main(void)
 { 
-  u16 s1 = 0, adtemp = 0; 
+  u16 s1 = 0, adtemp = 0, power_up = 0; 
   u8 VolLowCnt = 0, ChaLowCnt = 0;
   u8 TaskNumber = 1, KeyValue = 0;
   u8 KeyUp = 0, KeyT = 0;
@@ -254,35 +256,42 @@ void main(void)
       delay_ms(2000);
     }
 
-    OLED_ShowHZK(3, 2, 0, 24, FunctionSelect); //微电
-    OLED_ShowHZK(3 + 24, 2, 1, 24, FunctionSelect);
-    OLED_ShowHZK(3, 5, 2, 24, FunctionSelect + 1); //发热
-    OLED_ShowHZK(3 + 24, 5, 3, 24, FunctionSelect + 1);
-    OLED_ShowNum(86, 2, BIOIntensity, 1, 24, 1);
-    OLED_ShowNum(86, 5, TempIntensity, 1, 24, 1);
-    OLED_ShowHZK(50, 0, 3, 16, 1); //暂停
-    OLED_ShowHZK(50 + 16, 0, 4, 16, 1);
-    if (FunctionSelect == FUNCTION_BIO)
-    {
-      OLED_ShowChar(60, 2, '<', 24, 1);
-      OLED_ShowChar(60, 5, ' ', 24, 1);
-      OLED_ShowChar(109, 2, '>', 24, 1);
-      OLED_ShowChar(109, 5, ' ', 24, 1);
-    }
-    else
-    {
-      OLED_ShowChar(60, 2, ' ', 24, 1);
-      OLED_ShowChar(60, 5, '<', 24, 1);
-      OLED_ShowChar(109, 2, ' ', 24, 1);
-      OLED_ShowChar(109, 5, '>', 24, 1);
-    }
-
     while (1)
     {
 #ifndef DEBUG
     IWDG_Feed;  //Clear IWDG cnt
 #endif
 
+    if (power_up == 0)
+    {
+      power_up = 1;
+      OLED_fill_picture(&PIC1[0][0]);
+      delay_ms(1000);
+      OLED_Clear(0);
+      OLED_ShowHZK(3, 2, 0, 24, FunctionSelect); //微电
+      OLED_ShowHZK(3 + 24, 2, 1, 24, FunctionSelect);
+      OLED_ShowHZK(3, 5, 2, 24, FunctionSelect + 1); //发热
+      OLED_ShowHZK(3 + 24, 5, 3, 24, FunctionSelect + 1);
+      OLED_ShowNum(86, 2, BIOIntensity, 1, 24, 1);
+      OLED_ShowNum(86, 5, TempIntensity, 1, 24, 1);
+      OLED_ShowHZK(50, 0, 3, 16, 1); //暂停
+      OLED_ShowHZK(50 + 16, 0, 4, 16, 1);
+      if (FunctionSelect == FUNCTION_BIO)
+      {
+        OLED_ShowChar(60, 2, '<', 24, 1);
+        OLED_ShowChar(60, 5, ' ', 24, 1);
+        OLED_ShowChar(109, 2, '>', 24, 1);
+        OLED_ShowChar(109, 5, ' ', 24, 1);
+      }
+      else
+      {
+        OLED_ShowChar(60, 2, ' ', 24, 1);
+        OLED_ShowChar(60, 5, '<', 24, 1);
+        OLED_ShowChar(109, 2, ' ', 24, 1);
+        OLED_ShowChar(109, 5, '>', 24, 1);
+      }
+    }
+    
     if (FlagState.ms2)
     {
       FlagState.ms2 = 0;

@@ -179,9 +179,10 @@ void OLED_WR_Byte(unsigned dat, unsigned cmd)
 /********************************************
 // fill_Picture
 ********************************************/
-void OLED_fill_picture(unsigned char fill_Data)
+void OLED_fill_picture(const unsigned char *fill_Data)
 {
 	unsigned char m, n;
+	unsigned int i = 0;
 	for (m = 0; m < 8; m++)
 	{
 		OLED_WR_Byte(0xb0 + m, 0); //page0-page1
@@ -189,7 +190,8 @@ void OLED_fill_picture(unsigned char fill_Data)
 		OLED_WR_Byte(0x10, 0);	 //high column start address
 		for (n = 0; n < 128; n++)
 		{
-			OLED_WR_Byte(fill_Data, 1);
+			OLED_WR_Byte(fill_Data[i], 1);
+			i++;
 		}
 	}
 }
