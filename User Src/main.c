@@ -94,7 +94,7 @@ void BIO1Power(u8 i, u8 Work)
 }
 
 //Heat
-u8 TempIntensity = 1;
+u8 TempIntensity = 0;
 const u16 HeatIntensityTable[] = {0, 1, 2, 3, 4,
 																	5, 6, 7, 8};
 void HeatPWM(u8 i, u8 Work)
@@ -324,7 +324,8 @@ void main(void)
       OLED_ShowHZK(3 + 24, 5, 3, 24, 1);
       OLED_ShowNum(60, 2, BIOIntensity, 2, 24, 0);
       OLED_ShowChar(100, 2, BIOMode+'@', 24, 1);
-      OLED_ShowNum(60, 5, TempIntensity*3+30, 2, 24, 1);
+      OLED_ShowChar(60, 5, '-', 24, 1); //温度为0不工作
+      OLED_ShowChar(72, 5, '-', 24, 1);
       OLED_ShowHZK(85, 5, 4, 24, 1); //C
       OLED_ShowHZK(50, 0, 3, 16, 1); //暂停
       OLED_ShowHZK(50 + 16, 0, 4, 16, 1);
@@ -413,7 +414,15 @@ void main(void)
               else
               {
                 TempIntensity++;
-                OLED_ShowNum(60, 5, TempIntensity*3+30, 2, 24, 0);
+                if (TempIntensity)
+                {
+                  OLED_ShowNum(60, 5, TempIntensity * 3 + 30, 2, 24, 0);
+                }
+                else
+                {
+                  OLED_ShowChar(60, 5, '-', 24, 0);
+                  OLED_ShowChar(72, 5, '-', 24, 0);
+                }
               }
             }
           }
@@ -426,19 +435,43 @@ void main(void)
             {
                 OLED_ShowNum(60, 2, BIOIntensity, 2, 24, 0);
                 OLED_ShowChar(100, 2, BIOMode+'@', 24, 1);
-                OLED_ShowNum(60, 5, TempIntensity*3+30, 2, 24, 1);
+                if (TempIntensity)
+                {
+                  OLED_ShowNum(60, 5, TempIntensity * 3 + 30, 2, 24, 1);
+                }
+                else
+                {
+                  OLED_ShowChar(60, 5, '-', 24, 1);
+                  OLED_ShowChar(72, 5, '-', 24, 1);
+                }
             }
             else if (OptionSelect == FUNCTION_BIO_MODE)
             {
                 OLED_ShowNum(60, 2, BIOIntensity, 2, 24, 1);
                 OLED_ShowChar(100, 2, BIOMode+'@', 24, 0);
-                OLED_ShowNum(60, 5, TempIntensity*3+30, 2, 24, 1);
+                if (TempIntensity)
+                {
+                  OLED_ShowNum(60, 5, TempIntensity * 3 + 30, 2, 24, 1);
+                }
+                else
+                {
+                  OLED_ShowChar(60, 5, '-', 24, 1);
+                  OLED_ShowChar(72, 5, '-', 24, 1);
+                }
             }
             else
             {
                 OLED_ShowNum(60, 2, BIOIntensity, 2, 24, 1);
                 OLED_ShowChar(100, 2, BIOMode+'@', 24, 1);
-                OLED_ShowNum(60, 5, TempIntensity*3+30, 2, 24, 0);
+                if (TempIntensity)
+                {
+                  OLED_ShowNum(60, 5, TempIntensity * 3 + 30, 2, 24, 0);
+                }
+                else
+                {
+                  OLED_ShowChar(60, 5, '-', 24, 0);
+                  OLED_ShowChar(72, 5, '-', 24, 0);
+                }
             }
           }     
           else if(((KeyValue&KEY_INTEN_DOWN)==KEY_INTEN_DOWN)&&KeyUp)
@@ -468,13 +501,21 @@ void main(void)
             }
             else
             {
-              if (TempIntensity == 1)
+              if (TempIntensity == 0)
               {
               }
               else
               {
                 TempIntensity--;
-                OLED_ShowNum(60, 5, TempIntensity*3+30, 2, 24, 0);
+                if (TempIntensity)
+                {
+                  OLED_ShowNum(60, 5, TempIntensity * 3 + 30, 2, 24, 0);
+                }
+                else
+                {
+                  OLED_ShowChar(60, 5, '-', 24, 0);
+                  OLED_ShowChar(72, 5, '-', 24, 0);
+                }
               }
             }
           }     
