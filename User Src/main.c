@@ -122,8 +122,8 @@ void HeatPWM(u8 i, u8 Work)
 }
 
 //Temperature Process
-const u16 TemperatureTable[] = {4095, 1400, 1396, 1296, 1196, 1096,
-								                1040, 996, 796, 596, 498};
+const u16 TemperatureTable[] = {4079, 1650, 1500, 1400, 1396,
+								                1296, 1196, 996, 896, 796, 696};//1400,1396,1296,1196,1096,1040,996,796,596,498
 u16 TempADvalue = 0;
 void TemperatureProcess(void)
 {
